@@ -1,6 +1,7 @@
 #include <Imagine/Images.h>
 #include <Imagine/Graphics.h>
 #include <cmath>
+#include "normaldistribution.h"
 using namespace Imagine;
 using namespace std;
 
@@ -13,7 +14,7 @@ const double propstresse = 0.8;
 const int debitentree = 50;
 const double ecarttype = 1;
 const int nbdestinations = 3;
-const double sigma = 0.05;
+const double sigma = 5.0;
 //tableau contenant le nombre de passagers dans le train
 double s[30];
 double T[300];
@@ -70,7 +71,7 @@ void gotominlocal(){
 				}
 			}
 			if (sorties[i] < nbportes && sorties[i]>0){
-				for (int k = sorties[i]; k < max({ nbportes - sorties[i], sorties[i] }); k++){
+                for (int k = sorties[i]; k < max( nbportes - sorties[i], sorties[i] ); k++){
 					if (s[sorties[i] + k + 1] >= s[sorties[i] + k]){ s[sorties[i] + k] += 1; }
 					else if (s[sorties[i] - k - 1] >= s[sorties[i] - k]){ s[sorties[i] - k] += 1; }
 				}
@@ -125,20 +126,13 @@ void loiuniforme(int sorties[nbsorties]){
 }
 
 void loinormale(int i, int j){
-	int Rsup = ((int(100 * ((j + 1 - Destination[i]) / sigma))) / 100);
-	int Rinf = ((int(100 * ((j - Destination[i]) / sigma))) / 100);
-	if (((int(100 * ((j + 1 - Destination[i]) / sigma))) / 100) > 299){ Rsup = 299; }
-	if (((int(100 * ((j + 1 - Destination[i]) / sigma))) / 100) <= -299){ Rsup = 300; }
-	if (((int(100 * ((j - Destination[i]) / sigma))) / 100) > 299){ Rinf = 299; }
-	if (((int(100 * ((j - Destination[i]) / sigma))) / 100) <= -299){ Rinf = 300; }
-	double Psup, Pinf;
-	if (Rsup >= 0 && Rsup < 300){ Psup = T[Rsup]; }
-	if (Rsup == 300){ Psup = 0;}
-	if (Rsup<0) { Psup = 1 - T[-Rsup]; }
-	if (Rinf >= 0 && Rinf <300){ Pinf = T[Rinf]; }
-	if (Rinf == 300){ Pinf = 0; }
-	if (Rinf<0) { Pinf = 1 - T[-Rinf]; }
-	s[j] = s[j] + nbprevoyants*proportiondestination[i] * (Psup - Pinf);
+    //i - No.destination
+    //j - No.porte
+    NormalDistribution normal;
+    double xSup=(j+1-Destination[i])/sigma;
+    double xInf=(j - Destination[i])/sigma;
+    double value=nbprevoyants*proportiondestination[i] * (normal.getPhi(xSup) - normal.getPhi(xInf));
+    s[j] += value;
 }
 
 void init_loinormale(){
