@@ -35,7 +35,7 @@ void init_sorties(){
 	cout << "Donnez la proportion de gens qui arrive par la sortie" << endl;
 	double S=0;
 	for (int i = 0; i < nbsorties; i++){
-		cout << "pour la sortie" << i+1 << " (entier entre 1 et 30)" << endl;
+        cout << "pour la sortie" << i+1 << " (entier entre 0 et 29)" << endl;
 		cin >> sorties[i];
 		cout << "un double quelconque" << endl;
 		cin >> proportionsorties[i];
@@ -146,6 +146,10 @@ void init_quai(){
 	}
 }
 
+int main2(){
+    NormalDistribution normal;
+    cout<<normal.getPhi(2.0)<<endl;
+}
 
 int main(){
 	init_quai();
