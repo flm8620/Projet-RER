@@ -23,7 +23,7 @@ const int nbsorties=2;
 int sorties[nbsorties];
 //proportion des passagers qui arrive par chaque sortie
 double proportionsorties[nbsorties];
-//paramètre de la loi exponentielle
+//paramÃ¨tre de la loi exponentielle
 const int lambda = -1;
 
 void init_sorties(){
@@ -35,7 +35,7 @@ void init_sorties(){
 	cout << "Donnez la proportion de gens qui arrive par la sortie" << endl;
 	double S=0;
 	for (int i = 0; i < nbsorties; i++){
-		cout << "pour la sortie" << i+1 << " (entier entre 1 et 30)" << endl;
+		cout << "pour la sortie" << i+1 << " (entier entre 0 et 29)" << endl;
 		cin >> sorties[i];
 		cout << "un double quelconque" << endl;
 		cin >> proportionsorties[i];
@@ -49,7 +49,7 @@ void init_Destination(){
 	cout << "Designez la porte la plus pres de chaque destination favorite" << endl;
 	cout << "Donnez la proportion de gens qui veulent y aller" << endl;
 	for (int i = 0; i < nbdestinations; i++){
-		cout << "pour la porte" << i + 1 << " (un entier entre 1 et 30)" << endl;
+		cout << "pour la porte" << i + 1 << " (un entier entre 0 et 29)" << endl;
 		cin >> Destination[i];
 		cout << "un double quelconque" << endl;
 		cin >> proportiondestination[i];
@@ -82,14 +82,14 @@ void gotominlocal(){
 void loiexponentiel(int sorties[nbsorties]){
 	//boucle sur toutes les sorties (1 loi par sortie)
 	for (int i = 0; i < nbsorties; i++){
-		//Cas sortie au début du quai
+		//Cas sortie au dÃ©but du quai
 		if (sorties[i] == 0){
 			for (int j = 0; j < nbportes; j++){
 				s[j] += (1 - exp(lambda)) / (1 - exp(lambda*nbportes))*exp(lambda*j)*tempsstation*debitentree*propstresse*proportionsorties[i];
-				//la loi est normée puis elle est multpliée par le nombre de passager stressé et en retard entrant par la sortie i.
+				//la loi est normÃ©e puis elle est multpliÃ©e par le nombre de passager stressÃ© et en retard entrant par la sortie i.
 			}
 		}
-		//Cas sortie à la fin du quai
+		//Cas sortie Ã  la fin du quai
 		if (sorties[i] == nbportes - 1){
 			for (int j = 0; j < nbportes; j++){
 				s[j] += (1 - exp(lambda)) / (1 - exp(lambda*nbportes))*exp(lambda*(nbportes - j))*tempsstation*debitentree*propstresse*proportionsorties[i];
@@ -103,10 +103,10 @@ void loiexponentiel(int sorties[nbsorties]){
 			for (int j = sorties[i]; j < nbportes; j++){
 				s[j] += (1 - exp(lambda)) / (2 - exp(lambda*sorties[i]) - exp(lambda*(nbportes - sorties[i])))*exp(lambda*(j + 1 - sorties[i]))*tempsstation*debitentree*propstresse*proportionsorties[i];
 			}
-			//cette expression est la synthèse de trois étapes
-			//1/ à la porte la plus proche de la sortie, la fonction a pour valeur 1 et elle décroit de chaque côté selon une même loi exponentielle de paramètre lambda
+			//cette expression est la synthÃ¨se de trois Ã©tapes
+			//1/ Ã  la porte la plus proche de la sortie, la fonction a pour valeur 1 et elle dÃ©croit de chaque cÃ´tÃ© selon une mÃªme loi exponentielle de paramÃ¨tre lambda
 			//2/ je norme cette fonction sur le quai
-			//3/ je multiplie par le nombre de passager stressé en retard entrant par la sortie i.
+			//3/ je multiplie par le nombre de passager stressÃ© en retard entrant par la sortie i.
 		}
 	}
 }
@@ -118,7 +118,7 @@ void loiuniforme(int sorties[nbsorties]){
 		for (int j = 0; j < nbdestinations; j++){
 			//boucle sur les portes entre la sortie et les destinations
 			for (int k = min(i, j); k < max(i, j); k++){
-				s[k] = tempsstation*debitentree*(1 - propstresse)*proportionsorties[i] * proportiondestination[j]/(j-i);
+				s[k] += tempsstation*debitentree*(1 - propstresse)*proportionsorties[i] * proportiondestination[j]/(j-i);
 			}
 		}
 	}
@@ -170,9 +170,9 @@ int main(){
 	loiuniforme(sorties);
 
 
-	openWindow(600, 600);
+	openWindow(620, 600);
 	for (int i = 0; i < nbportes; i++){
-		drawLine(20 * i, 600, 20 * i, 600.-s[i], MAGENTA);
+		drawLine(20 * i+10, 599, 20 * i+10, 599.-s[i], MAGENTA);
 		cout << s[i] << endl;
 	}
 	system("pause");
