@@ -1,6 +1,7 @@
 #ifndef STATIONMODEL_H
 #define STATIONMODEL_H
 #include <vector>
+#include <cmath>
 
 class StationModel
 {

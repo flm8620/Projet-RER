@@ -6,14 +6,31 @@ using namespace std;
 void StationModel::loiNormal()
 {
     NormalDistribution normal;
+    vector<double> normalDiscret,normalDiscretNormee;
+    normalDiscret.assign(nbPortes,0);
+    normalDiscretNormee.assign(nbPortes,0);
     for (int i = 0; i < nbDestinations; i++){
         for (int j = 0; j < nbPortes; j++){
             double xSup=(j+0.5-destinations[i])/sigma;
             double xInf=(j-0.5-destinations[i])/sigma;
-            double value=nbPrevoyants*proportionDestination[i] * (normal.getPhi(xSup) - normal.getPhi(xInf));
-            s[j] += value;
+            normalDiscret[j]=(normal.getPhi(xSup) - normal.getPhi(xInf));
+        }
+        double S=0;
+        for(int j=0;j<nbPortes;j++){
+            S+=normalDiscret[j];
+        }
+        cout<<"S="<<S<<endl;
+        for(int j=0;j<nbPortes;j++){
+            normalDiscretNormee[j]=normalDiscret[j]/S;
+
+        }
+        for(int j=0;j<nbPortes;j++){
+
+        double value=nbPrevoyants*proportionDestination[i] * normalDiscretNormee[j];
+        s[j] += value;
         }
     }
+
 }
 
 void StationModel::loiExponentiel()
@@ -74,32 +91,57 @@ void StationModel::gotominilocal()
     //NEED TO BE FIXED
     for (int i = 0; i < nbSorties; i++){
         for (int j = 0; j < proportionSorties[i] * nbConfort; j++){
+            int k,k_left,k_right;
             if (sorties[i] == 0){
             //  O->----------------------
-                for (int k = 0; k < nbPortes-1; k++){
+                for (k = 0; k < nbPortes-1; k++){
                     if (s[k + 1] >= s[k]){
                         s[k] += 1;
-                        continue;
+                        break;
                     }
                 }
                 //derniere porte
-                s[nbPortes-1]+=1;
+                if(k==nbPortes-1)s[nbPortes-1]+=1;
             }else if (sorties[i] == nbPortes-1){
             //  ----------------------<-O
-                for (int k = nbPortes-1; k > 0; k--){
+                for (k = nbPortes-1; k > 0; k--){
                     if (s[k - 1] >= s[k]){
                         s[k] += 1;
-                        continue;
+                       break;
                     }
                 }
                 //derniere porte
-                s[0]+=1;
+                if(k==0)s[0]+=1;
             }else if (sorties[i] < nbPortes && sorties[i]>0){
             //  ---------<-O->-----------
-                for (int k_left=sorties[i], k_right = sorties[i]; k_left < max( nbPortes - sorties[i], sorties[i] ); k_left++,k_right++){
-                    //WAIT TO BE FINISHED
-                    //the passenger goes in two direction in the same time?
+
+                //Il y a deux choix, soit vers gauche, soit droite
+                //On suppose que la proportion de choix gauche et de droite est
+                //proportionnelle que la longueur de quai à gauche et à droite
+                double partieVersGauche,partieVersDroite;
+                partieVersGauche=double(sorties[i]-0)/(nbPortes-1);
+                partieVersDroite=double(nbPortes-sorties[i])/(nbPortes-1);
+                //Gauche+Droite=1
+
+                //vers gauche
+                for (k_left=sorties[i]; k_left >0; k_left--){
+                    if(s[k_left-1]>=s[k_left]){
+                        s[k_left]+=partieVersGauche;
+                        break;
+                    }
                 }
+                //derniere porte
+                if(k==0)s[0]+=partieVersGauche;
+
+                //vers droite
+                for (k_right=sorties[i]; k_right <nbPortes-1; k_right++){
+                    if(s[k_right-1]>=s[k_right]){
+                        s[k_right]+=partieVersDroite;
+                        break;
+                    }
+                }
+                //derniere porte
+                if(k==nbPortes-1)s[nbPortes-1]+=partieVersDroite;
             }
         }
     }
@@ -185,7 +227,7 @@ std::vector<double> StationModel::getRepartition(std::vector<int> &indicesPortes
     loiNormal();
     loiExponentiel();
     loiUniforme();
-    //gotominilocal(); ----> NEED TO BE FIXED
+    //gotominilocal();
     return s;
 }
 

@@ -21,7 +21,10 @@ void printOutResultat(vector<double> R){
 int main(){
     //30 portes, 3 destinations 2 sorties
     //pour changer les autre parametre, voir la constructeur de StationModel
-    StationModel model(30,3,2);
+    int nombrePortes=30;
+    int nombreDesti=3;
+    int nombreSorti=2;
+    StationModel model(nombrePortes,nombreDesti,nombreSorti);
 
     vector<int>    A(5);
     vector<double> B(5);
@@ -34,6 +37,7 @@ int main(){
 
 //B: proportions pour Destinations et Sorties
 //    Desti: 1/3  1/3  1/3         Sortie: 1/2  1/2
+//Ils vont être normalisés après.
     B[0]=1.0;   B[1]=1.0;   B[2]=1.0;   B[3]=1.0;   B[4]=1.0;
 
 
