@@ -63,6 +63,7 @@ void init_Destination(){
 }
 
 void gotominlocal(){
+    //some problem of index detected, need to fix --Leman
     for (int i = 0; i < nbSorties; i++){
         for (int j = 0; j < proportionSorties[i] * nbConfort; j++){
             if (sorties[i] == 1){
@@ -154,7 +155,7 @@ void init_quai(){
 }
 
 
-int main(){
+int main2(){
     init_quai();
 
     init_Destination();
