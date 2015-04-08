@@ -57,7 +57,7 @@ void init_Destination(){
         cin >> proportionDestination[i];
         S+=proportionDestination[i];
     }
-    for (int i = 0; i < nbSorties; i++){
+    for (int i = 0; i < nbDestinations; i++){
         proportionDestination[i] /= S;
     }
 }
