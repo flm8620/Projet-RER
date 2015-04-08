@@ -140,8 +140,8 @@ void loinormale(int i, int j){
     //i - No.destination
     //j - No.porte
     NormalDistribution normal;
-    double xSup=(j+1-destination[i])/sigma;
-    double xInf=(j - destination[i])/sigma;
+    double xSup=(j+0.5-destination[i])/sigma;
+    double xInf=(j-0.5-destination[i])/sigma;
     double value=nbPrevoyants*proportionDestination[i] * (normal.getPhi(xSup) - normal.getPhi(xInf));
     s[j] += value;
 }
