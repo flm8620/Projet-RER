@@ -94,8 +94,8 @@ void loiexponentiel(int sorties[nbsorties]){
 		//Cas sortie à la fin du quai
 		if (sorties[i] == nbportes - 1){
 			for (int j = 0; j < nbportes; j++){
-                double A=
-                s[j] += (1 - exp(-lambda)) / (1 - exp(-lambda*nbportes))*exp(-lambda*(nbportes - j-1))*tempsstation*debitentree*propstresse*proportionsorties[i];
+                double A=(1 - exp(-lambda)) / (1 - exp(-lambda*nbportes))*exp(-lambda*(nbportes - j-1));
+                s[j] += A*tempsstation*debitentree*propstresse*proportionsorties[i];
 			}
 		}
 		//Cas sortie au milieu du quai
