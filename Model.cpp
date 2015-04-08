@@ -23,7 +23,7 @@ const int nbSorties=2;
 int sorties[nbSorties];
 //proportion des passagers qui arrive par chaque sortie
 double proportionSorties[nbSorties];
-//paramètre de la loi exponentielle
+//paramÃ¨tre de la loi exponentielle
 const int lambda = 1;
 
 
@@ -94,10 +94,10 @@ void loiexponentiel(int sorties[nbSorties]){
                 double A=(1 - exp(-lambda)) / (1 - exp(-lambda*nbPortes));
                 //A est une constante pour normer la loi
                 s[j] += A*exp(-lambda*j)   *   tempsStation*debitEntree*propStresse*proportionSorties[i];
-                //la loi est normée puis elle est multpliée par le nombre de passager stressé et en retard entrant par la sortie i.
+                //la loi est normÃ©e puis elle est multpliÃ©e par le nombre de passager stressÃ© et en retard entrant par la sortie i.
             }
         }
-        //Cas sortie à la fin du quai
+        //Cas sortie Ã  la fin du quai
         if (sorties[i] == nbPortes - 1){
             for (int j = 0; j < nbPortes; j++){
                 double A=(1 - exp(-lambda)) / (1 - exp(-lambda*nbPortes));
@@ -114,8 +114,8 @@ void loiexponentiel(int sorties[nbSorties]){
                 double A=(1 - exp(-lambda)) / (2 - exp(-lambda*sorties[i]) - exp(-lambda*(nbPortes - sorties[i])));
                 s[j] += A*exp(-lambda*(j + 1 - sorties[i]))*tempsStation*debitEntree*propStresse*proportionSorties[i];
             }
-            //cette expression est la synthèse de trois étapes
-            //1/ à la porte la plus proche de la sortie, la fonction a pour valeur 1 et elle décroit de chaque côté selon une même loi exponentielle de paramètre -lambda
+            //cette expression est la synthÃ¨se de trois Ã©tapes
+            //1/ Ã  la porte la plus proche de la sortie, la fonction a pour valeur 1 et elle dÃ©croit de chaque cÃ´tÃ© selon une mÃªme loi exponentielle de paramÃ¨tre -lambda
             //2/ je norme cette fonction sur le quai
             //3/ je multiplie par le nombre de passager stressÃ© en retard entrant par la sortie i.
         }
