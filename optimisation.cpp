@@ -277,8 +277,9 @@ Variables Optimisation::minimiser(Variables uStart)
 
     //seuil pour la condition d'arrêt
     double seuil=0.001;
-
-    cout<<"J(u0) = "<<fonctionObjectif(u0)<<endl;
+    cout<<"u0 = "<<endl;
+    u0.print();
+    cout<<"J(u0) = "<<fonctionObjectif(u0)<<endl<<endl<<"Commencer l'optimisation"<<endl;
     for(int i=0;i<2000;i++){
 
         //----output------

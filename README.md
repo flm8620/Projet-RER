@@ -6,6 +6,17 @@
       Model.exe doit apparaître
 1. Mettre data.txt à côté de Model.exe
       data.txt contient les données d'observation
+
+      --- ATTENTION ---
+
+      les données fournis dans data est la résultat
+      Repartition(uTest),
+      où uTest={indice Destination= 5 15 22
+                Proportion Desti= 0.33 0.33 0.33
+                Proportion Sorti= 0.5 0.5
+                }
+      il faut changer les données selon notre comptage
+
 2. indiquer u0 dans main()
 3. préciser les paramètre de model
       changer les paramètres

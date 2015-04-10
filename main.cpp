@@ -37,6 +37,7 @@ std::vector<double> readFile(const char* fileName,int nombrePortes){
     for(int i=0;i<nombrePortes;i++){
         cout<<"Porte "<<i<<" "<<observations[i]<<endl;
     }
+    cout<<endl;
     return observations;
 }
 
@@ -50,7 +51,7 @@ int main(){
 
 
     StationModel model(nombrePortes,nombreDesti);
-    //on va optimiser la norme l^2:
+    //
     // le pb de optimisation avec contrainte :
     //
     //     inf    J(u) ,   K dans V
