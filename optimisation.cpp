@@ -8,6 +8,7 @@ double Optimisation::fonctionObjectif(Variables u)
 {
     vector<double> R;
     R=modelUtilise->getRepartitionNonNormalizePropo(u.desti,u.propoDesti,u.propoSorti);
+
     //norme l^2
     double l2=0;
     if(R.size()!=observation.size()){
@@ -69,20 +70,26 @@ void Optimisation::projectionSousContrainte(Variables &u)
 Variables Optimisation::takeBestMoveOfIndex(Variables u)
 {
     Variables directionU=u,uNext,uPrev;
-    double J_min_u=minimierSurPropo(u);
+
+    // minimiserSurPropo(u):
+    // On fix la partie indicePortes de u
+    // on fait minimisation sur proportionDesti et proportion Sorti
+    double J_min_u=minimiserSurPropo(u);
+
+    //boucle sur les Destinations
     for(int i=0;i<u.desti.size();i++){
         uNext=u;
         uPrev=u;
         if(u.desti[i]==0){
             uNext.desti[i]+=1;
-            if(minimierSurPropo(uNext)<J_min_u){
+            if(minimiserSurPropo(uNext)<J_min_u){
                 directionU.desti[i]=1;
             }else{
                 directionU.desti[i]=0;
             }
         }else if(u.desti[i]==modelUtilise->getNbPortes()-1){
             uPrev.desti[i]-=1;
-            if(minimierSurPropo(uPrev)<J_min_u){
+            if(minimiserSurPropo(uPrev)<J_min_u){
                 directionU.desti[i]=-1;
             }else{
                 directionU.desti[i]=0;
@@ -90,9 +97,9 @@ Variables Optimisation::takeBestMoveOfIndex(Variables u)
         }else{
             uNext.desti[i]+=1;
             uPrev.desti[i]-=1;
-            double left,middle,right;
-            left=minimierSurPropo(uPrev);
-            right=minimierSurPropo(uNext);
+            double left,right;
+            left=minimiserSurPropo(uPrev);
+            right=minimiserSurPropo(uNext);
             if(left<J_min_u){
                 if(right<left){
                     directionU.desti[i]=1;
@@ -114,12 +121,12 @@ Variables Optimisation::takeBestMoveOfIndex(Variables u)
     for(int i=0;i<directionU.desti.size();i++){
         u_du.desti[i]+=directionU.desti[i];
     }
-    minimierSurPropo(u_du);//ici u_du change
+    minimiserSurPropo(u_du);//ici u_du change
     return u_du;
 
 }
 
-double Optimisation::minimierSurPropo(Variables& u)
+double Optimisation::minimiserSurPropo(Variables& u)
 {
     Variables gradUPropo,u0,u_k,u_k_1,u_solu;
     bool trouvee=false;
@@ -222,15 +229,16 @@ void Optimisation::printCompare(Variables u)
 {
     vector<double> R=modelUtilise->getRepartition(u.desti,u.propoDesti,u.propoSorti);
     double S1=0,S2=0;
-    cout<<"comparer les résultats:"<<endl;
-    cout<<"\t\tobservation\t\tsimulation\t\tdifférence"<<endl;
+    cout<<"Comparer les résultats:"<<endl;
+    cout<<"\t\tObservation\tSimulation\tDifférence"<<endl;
     for(int i=0;i<R.size();i++){
         cout<<"\t\t"<<observation[i]<<"\t\t"<<R[i]<<"\t\t"<<observation[i]-R[i]<<endl;
         S1+=observation[i];
         S2+=R[i];
     }
+    cout<<endl;
     cout<<"somme\t\t"<<S1<<"\t\t"<<S2<<endl;
-    cout<<"norme l2: ||obser-simu||_l2 =\t"<<fonctionObjectif(u)<<endl;
+    cout<<"Norme l^2: || obser-simu ||_l^2 =\t"<<fonctionObjectif(u)<<endl;
 }
 
 Optimisation::Optimisation()
@@ -267,25 +275,35 @@ Variables Optimisation::minimiser(Variables uStart)
     bool trouvee=false;
     u0=u_k=uStart;
 
-    double seuil=0.00001;
+    //seuil pour la condition d'arrêt
+    double seuil=0.001;
 
     cout<<"J(u0) = "<<fonctionObjectif(u0)<<endl;
     for(int i=0;i<2000;i++){
+
+        //----output------
         u_k.print();
         cout<<"J(uk)="<<fonctionObjectif(u_k)<<endl;
         printOutCompare(u_k);
+
+        //faire un pas sur les indiceDesti
+        // y compris le gradient, le pas, le projection
         u_k_1=takeBestMoveOfIndex(u_k);
-        //if(TesterConvergence(u_k,u_k_1,u0)<seuil){
-        if(false){
+
+        //condition d'arrêt
+        if(TesterConvergence(u_k,u_k_1,u_k)<seuil){
             u_solu=u_k_1;
             trouvee=true;
             break;
         }
         u_k=u_k_1;
     }
+
     if(trouvee){
         cout<<"solution trouvée!"<<endl;
+        cout<<"u = "<<endl;
         u_solu.print();
+        cout<<endl;
         printCompare(u_solu);
 
     }else{

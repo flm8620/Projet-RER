@@ -19,7 +19,7 @@ private:
     double fonctionObjectif(Variables u);
     void projectionSousContrainte(Variables& u);
     Variables takeBestMoveOfIndex(Variables u);
-    double minimierSurPropo(Variables &u);
+    double minimiserSurPropo(Variables &u);
     Variables calcGradientPourPropo(Variables u);
     Variables unPasPourProportions(Variables &u, Variables gradientU);
     Variables unPasPourIndiceDesti(Variables &u, Variables gradientU);

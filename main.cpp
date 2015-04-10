@@ -19,13 +19,8 @@ void printOutResultat(vector<double> R){
     cout<<"sommation: "<<sum<<endl;
 
 }
-
-
-int main(){
-
-    ifstream file("data.txt");
-    int nombrePortes=30;
-    int nombreDesti=3;
+std::vector<double> readFile(const char* fileName,int nombrePortes){
+    ifstream file(fileName);
     vector<double> observations(nombrePortes);
     cout<<"Lire ficher 'data.txt' ..."<<endl;
     if(!file){
@@ -42,26 +37,58 @@ int main(){
     for(int i=0;i<nombrePortes;i++){
         cout<<"Porte "<<i<<" "<<observations[i]<<endl;
     }
-    openWindow(620, 600);
+    return observations;
+}
+
+int main(){
+
+
+    int nombrePortes=30;
+    int nombreDesti=3;
+    //lire les données dans 'data.txt'
+    vector<double> observations=readFile("data.txt",nombrePortes);
+
+
     StationModel model(nombrePortes,nombreDesti);
+    //on va optimiser la norme l^2:
+    // le pb de optimisation avec contrainte :
+    //
+    //     inf    J(u) ,   K dans V
+    //  u dans K
+    //
+    //    u = {IndiceDesti[i],ProportionDesti[i],ProportionSorti[i]}
+    //    J(u) = || reparti(u)-observation ||_l^2 = Sigma_i( ( reparti(u)[i]-observation[i] )^2 )
+    //    K={u dans V | 0<=IndiceDesti[i]<nbPortes , Sigma_i(ProportionDesti[i])=1 , Sigma_i(ProportionSorti[i])=1 }
+    //
+    //
     Optimisation optim;
+    //faire optim savoir le model qu'on utilise
     optim.setModel(model);
+    //faire optim savoir les données qu'on a lit
     optim.setObservation(observations);
-    //start point:
+
+    //Créer une structure de variable
+    //choisir u0 dans K
+    //IL FAUT ESSAYER DIFFERENT u0 POUR EVITER MIN LOCAL
     Variables uStart;
     uStart.desti.assign(3,0.0);
-    uStart.desti[0]=12;
+    uStart.desti[0]=13;
     uStart.desti[1]=14;
-    uStart.desti[2]=16;
+    uStart.desti[2]=15;
     uStart.propoDesti.assign(3,0.0);
-    uStart.propoDesti[0]=1;
-    uStart.propoDesti[1]=1;
-    uStart.propoDesti[2]=1;
+    uStart.propoDesti[0]=0.75;
+    uStart.propoDesti[1]=0.25;
+    uStart.propoDesti[2]=0.25;
     uStart.propoSorti.assign(2,0.0);
-    uStart.propoSorti[0]=1;
-    uStart.propoSorti[1]=1;
-    optim.minimiser(uStart);
+    uStart.propoSorti[0]=0.7;
+    uStart.propoSorti[1]=0.3;
 
+
+    openWindow(620, 600);
+
+    //minimisation
+    //regarder Page 69 du poly Calcul Scientifique
+    optim.minimiser(uStart);
 
     endGraphics();
 }
@@ -81,7 +108,7 @@ int main2(){
 
 //indices de portes pour Destinations et Sorties
 //    Desti:  10  20  25           Sortie: 0  29
-    indicesDesti[0]=10;    indicesDesti[1]=20;    indicesDesti[2]=25;
+    indicesDesti[0]=5;    indicesDesti[1]=15;    indicesDesti[2]=22;
 
 
 //proportions pour Destinations et Sorties
