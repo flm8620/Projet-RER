@@ -30,6 +30,7 @@
          dans Optimisation::unPasPourProportions(...){...}  
 5. lancer le programme et attendre  
 
+
 ##PROBLEME d'OPTIMISTION
 
 Le pb de optimisation avec contrainte :
@@ -40,7 +41,7 @@ u = {IndiceDesti[i],ProportionDesti[i],ProportionSorti[i]}
 J(u) = || reparti(u)-observation ||_l^2 = Sigma_i( ( reparti(u)[i]-observation[i] )^2 )  
 K={u dans V | 0<=IndiceDesti[i]<nbPortes , Sigma_i(ProportionDesti[i])=1 , Sigma_i(ProportionSorti[i])=1 }  
 
-##référence du cours CALCUL SC  
+##Référence du cours CALCUL SC  
 regarder Page 69 du poly Calcul scientifique   
 3.4.3 Algorithme de gradient (à pas fix) avec projection  
 ou Page 17/21 du poly du cours "méthode numérique pour l'optimisation"  
