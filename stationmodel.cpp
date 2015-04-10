@@ -3,6 +3,33 @@
 #include "normaldistribution.h"
 using namespace std;
 
+void StationModel::normalizeProportion()
+{
+    // assurer que la sommation de proportion = 1
+    double S=0;
+    for (int i = 0; i < nbDestinations; i++){
+        S+=proportionDestination[i];
+    }
+    if(S==0){
+        cout<<"error: sum of proportion =0"<<endl;
+        exit(0);
+    }
+    for (int i = 0; i < nbDestinations; i++){
+        proportionDestination[i] /=S;
+    }
+    S=0;
+    for (int i = 0; i < nbSorties; i++){
+        S+=proportionSorties[i];
+    }
+    if(S==0){
+        cout<<"error: sum of proportion =0"<<endl;
+        exit(0);
+    }
+    for (int i = 0; i < nbSorties; i++){
+        proportionSorties[i] /=S;
+    }
+}
+
 void StationModel::loiNormal()
 {
     NormalDistribution normal;
@@ -19,7 +46,6 @@ void StationModel::loiNormal()
         for(int j=0;j<nbPortes;j++){
             S+=normalDiscret[j];
         }
-        cout<<"S="<<S<<endl;
         for(int j=0;j<nbPortes;j++){
             normalDiscretNormee[j]=normalDiscret[j]/S;
 
@@ -88,7 +114,6 @@ void StationModel::loiUniforme()
 
 void StationModel::gotominilocal()
 {
-    //NEED TO BE FIXED
     for (int i = 0; i < nbSorties; i++){
         for (int j = 0; j < proportionSorties[i] * nbConfort; j++){
             int k,k_left,k_right;
@@ -147,61 +172,66 @@ void StationModel::gotominilocal()
     }
 }
 
-void StationModel::initSortiesDesti(std::vector<int> &indicesPortes, std::vector<double> &proportions)
+void StationModel::initSortiesDesti(std::vector<int> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti)
 {
-    int n1=indicesPortes.size();
-    int n2=proportions.size();
-    if(n1!=nbSorties+nbDestinations){
-        cout<<"error: size of indicesPortes incorrect"<<endl;
+    int nDesti=indicesDesti.size();
+    int npDesti=proportionDesti.size();
+    int npSorti=proportionSorti.size();
+    if(nDesti!=nbDestinations){
+        cout<<"error: size of indicesDestination incorrect"<<endl;
         exit(0);
     }
-    if(n2!=nbSorties+nbDestinations){
-        cout<<"error: size of proportion incorrect"<<endl;
+    if(npDesti!=nbDestinations){
+        cout<<"error: size of proportionDestination incorrect"<<endl;
         exit(0);
     }
-    //assigner les indice de porte
+    if(npSorti!=nbSorties){
+        cout<<"error: size of proportionSortie incorrect"<<endl;
+        exit(0);
+    }
+    //assigner les indice de porte destination
     for(int i=0;i<nbDestinations;i++){
-        destinations[i]=indicesPortes[i];
-    }
-    for(int i=0;i<nbSorties;i++){
-        sorties[i]=indicesPortes[i+nbDestinations];
-    }
-    // assurer que la sommation de proportion = 1
-    double S=0;
-    for (int i = 0; i < nbDestinations; i++){
-        S+=proportions[i];
-    }
-    for (int i = 0; i < nbDestinations; i++){
-        proportionDestination[i] =proportions[i]/S;
+        destinations[i]=indicesDesti[i];
     }
 
-    S=0;
-    for (int i = 0; i < nbSorties; i++){
-        S+=proportions[i+nbDestinations];
+    //assigner les proportions
+    for (int i = 0; i < nbDestinations; i++){
+        proportionDestination[i] =proportionDesti[i];
     }
     for (int i = 0; i < nbSorties; i++){
-        proportionSorties[i] =proportions[i+nbDestinations]/S;
+        proportionSorties[i] =proportionSorti[i];
     }
+
 
 
 
 
 }
 
-StationModel::StationModel(int nbPortes, int nbDestinations, int nbSorties)
+StationModel::StationModel(int nbPortes, int nbDestinations)
 {
     this->nbPortes=nbPortes;
     this->nbDestinations=nbDestinations;
-    this->nbSorties=nbSorties;
+
+    //par default
+    this->nbSorties=2;
+
+
     s.assign(nbPortes,0.0);
     destinations.assign(nbDestinations,0);
     sorties.assign(nbSorties,0);
+
+    //par default
+
+    sorties[0]=0;
+    sorties[1]=nbPortes-1;
+
     //par default, proportion uniforme
     proportionDestination.assign(nbDestinations,1.0);
     proportionSorties.assign(nbSorties,1.0);
 
     //par default
-    sigma=5.0;
+    sigma=2.0;
     lambda=1;
     nbPrevoyants=1000;
     nbConfort=500;
@@ -210,8 +240,6 @@ StationModel::StationModel(int nbPortes, int nbDestinations, int nbSorties)
     debitEntree=50;
     ecartType=1;
 
-
-
 }
 
 StationModel::~StationModel()
@@ -219,15 +247,28 @@ StationModel::~StationModel()
 
 }
 
-std::vector<double> StationModel::getRepartition(std::vector<int> &indicesPortes, std::vector<double> &proportions)
+std::vector<double> StationModel::getRepartition(std::vector<int> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti)
 {
     //init_quai
     s.assign(nbPortes,0.0);
-    initSortiesDesti(indicesPortes,proportions);
+    initSortiesDesti(indicesDesti,proportionDesti,proportionSorti);
+    normalizeProportion();
     loiNormal();
     loiExponentiel();
     loiUniforme();
-    //gotominilocal();
+    gotominilocal();
+    return s;
+}
+
+std::vector<double> StationModel::getRepartitionNonNormalizePropo(std::vector<int> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti)
+{
+    //init_quai
+    s.assign(nbPortes,0.0);
+    initSortiesDesti(indicesDesti,proportionDesti,proportionSorti);
+    loiNormal();
+    loiExponentiel();
+    loiUniforme();
+    gotominilocal();
     return s;
 }
 

@@ -26,17 +26,18 @@ private:
     //paramètre de la loi exponentielle
     int lambda;
 
-
-
+    void normalizeProportion();
     void loiNormal();
     void loiExponentiel();
     void loiUniforme();
     void gotominilocal();
-    void initSortiesDesti(std::vector<int> &indicesPortes,std::vector<double> &proportions);
+    void initSortiesDesti(std::vector<int> indicesDesti,std::vector<double> proportionDesti, std::vector<double>proportionSorti);
 public:
-    StationModel(int nbPortes,int nbDestinations,int nbSorties);
+    StationModel(int nbPortes, int nbDestinations);
     ~StationModel();
-    std::vector<double> getRepartition(std::vector<int> &indicesPortes,std::vector<double> &proportions);
+    std::vector<double> getRepartition(std::vector<int> indicesDesti, std::vector<double> proportionDesti,std::vector<double> proportionSorti);
+    std::vector<double> getRepartitionNonNormalizePropo(std::vector<int> indicesDesti, std::vector<double> proportionDesti,std::vector<double> proportionSorti);
+    int getNbPortes(){return nbPortes;}
 };
 
 #endif // STATIONMODEL_H
