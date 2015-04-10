@@ -1,5 +1,7 @@
 # Projet-RER
+
 -----Mode d'emploi-----
+
 0. lancer le programme sans data.txt
       Model.exe doit apparaître
 1. Mettre data.txt à côté de Model.exe
