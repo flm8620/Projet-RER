@@ -69,16 +69,15 @@ void StationModel::loiExponentiel()
         double A=(1 - e) / (1 + e - pow(e,m+1) - pow(e,nbPortes-m));
         double nbVoyageur=tempsStation*debitEntree*propStresse*proportionSorties[i];
 
-        double debugS=0;
         for (int j = 0; j < sorties[i]; j++){
             s[j] += A*pow(e,(sorties[i] - j))*nbVoyageur;
-            debugS+=A*pow(e,(sorties[i] - j));
+
         }
         for (int j = sorties[i]; j < nbPortes; j++){
             s[j] += A*pow(e,(j - sorties[i]))*nbVoyageur;
-            debugS+=A*pow(e,(j-sorties[i]));
+
         }
-        cout<<"debug"<<debugS<<endl;
+
         //cette expression est la synthèse de trois étapes
         //1/ à la porte la plus proche de la sortie, la fonction a pour valeur 1 et elle décroit de chaque côté selon une même loi exponentielle de paramètre -lambda
         //2/ je norme cette fonction sur le quai
