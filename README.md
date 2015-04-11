@@ -20,13 +20,13 @@
       changer les paramètres  
       dans StationModel::StationModel(...){...}  
 5. (facultatif) préciser les paramètre pour l'algorithme  
-      4.1 préciser double seuil=???;  
+      5.1 préciser double seuil=???;  
          dans Optimisation::minimiser(...)  
 
-      4.2 préciser const int maxIter=???;  
+      5.2 préciser const int maxIter=???;  
                et  double seuil=???;  
          dans Optimisation::minimiserSurPropo(...){...}  
-      4.3 préciser double lambda=???;  
+      5.3 préciser double lambda=???;  
          dans Optimisation::unPasPourProportions(...){...}  
 6. lancer le programme et attendre  
 
