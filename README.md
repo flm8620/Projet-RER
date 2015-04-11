@@ -2,9 +2,9 @@
 
 ##Mode d'emploi
 
-0. lancer le programme sans data.txt  
+1. lancer le programme sans data.txt  
       Model.exe doit apparaître
-1. Mettre data.txt à côté de Model.exe  
+2. Mettre data.txt à côté de Model.exe  
       data.txt contient les données d'observation  
       **ATTENTION**  
       les données fournis dans data est la résultat
@@ -15,11 +15,11 @@
                 }  
       il faut changer les données selon notre comptage  
 
-2. indiquer u0 dans main()  
-3. préciser les paramètre de model  
+3. indiquer u0 dans main()  
+4. préciser les paramètre de model  
       changer les paramètres  
       dans StationModel::StationModel(...){...}  
-4. (facultatif) préciser les paramètre pour l'algorithme  
+5. (facultatif) préciser les paramètre pour l'algorithme  
       4.1 préciser double seuil=???;  
          dans Optimisation::minimiser(...)  
 
@@ -28,7 +28,7 @@
          dans Optimisation::minimiserSurPropo(...){...}  
       4.3 préciser double lambda=???;  
          dans Optimisation::unPasPourProportions(...){...}  
-5. lancer le programme et attendre  
+6. lancer le programme et attendre  
 
 
 ##PROBLEME d'OPTIMISTION
