@@ -73,19 +73,19 @@ int main(){
     //IL FAUT ESSAYER DIFFERENT u0 POUR EVITER MIN LOCAL
     Variables uStart;
     uStart.desti.assign(3,0.0);
-    uStart.desti[0]=13;
-    uStart.desti[1]=14;
-    uStart.desti[2]=15;
+    uStart.desti[0]=10;
+    uStart.desti[1]=15;
+    uStart.desti[2]=20;
     uStart.propoDesti.assign(3,0.0);
-    uStart.propoDesti[0]=0.75;
-    uStart.propoDesti[1]=0.25;
-    uStart.propoDesti[2]=0.25;
+    uStart.propoDesti[0]=0.3;
+    uStart.propoDesti[1]=0.3;
+    uStart.propoDesti[2]=0.3;
     uStart.propoSorti.assign(2,0.0);
-    uStart.propoSorti[0]=0.7;
-    uStart.propoSorti[1]=0.3;
+    uStart.propoSorti[0]=0.5;
+    uStart.propoSorti[1]=0.5;
 
 
-    openWindow(620, 600);
+    openWindow(620, 700);
 
     //minimisation
     //regarder Page 69 du poly Calcul Scientifique

@@ -17,7 +17,7 @@ double Optimisation::fonctionObjectif(Variables u)
     for(int i=0;i<R.size();i++){
         l2+=(R[i]-observation[i])*(R[i]-observation[i]);
     }
-    return l2;
+    return sqrt(l2);
 }
 
 void Optimisation::projectionSousContrainte(Variables &u)
@@ -280,6 +280,10 @@ Variables Optimisation::minimiser(Variables uStart)
     cout<<"u0 = "<<endl;
     u0.print();
     cout<<"J(u0) = "<<fonctionObjectif(u0)<<endl<<endl<<"Commencer l'optimisation"<<endl;
+    printOutCompare(u0);
+    //DEBUG
+    //Imagine::endGraphics();
+    //exit(0);
     for(int i=0;i<2000;i++){
 
         //----output------
@@ -316,7 +320,7 @@ Variables Optimisation::minimiser(Variables uStart)
 
 void Optimisation::printOutCompare(Variables u)
 {
-    vector<double> R=modelUtilise->getRepartition(u.desti,u.propoDesti,u.propoSorti);
+    vector<double> R=modelUtilise->getRepartitionNonNormalizePropo(u.desti,u.propoDesti,u.propoSorti);
     Imagine::setBackGround(Imagine::WHITE);
     for(int i=0; i<R.size();i++){
         Imagine::drawLine(20 * i+10, 599, 20 * i+10, 599.-R[i], Imagine::MAGENTA);
