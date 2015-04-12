@@ -34,9 +34,11 @@ void StationModel::loiNormal()
 {
     NormalDistribution normal;
     vector<double> normalDiscret,normalDiscretNormee;
-    normalDiscret.assign(nbPortes,0);
-    normalDiscretNormee.assign(nbPortes,0);
+
     for (int i = 0; i < nbDestinations; i++){
+        double nbVoyageur=nbPrevoyants*proportionDestination[i];
+        normalDiscret.assign(nbPortes,0);
+        normalDiscretNormee.assign(nbPortes,0);
         for (int j = 0; j < nbPortes; j++){
             double xSup=(j+0.5-destinations[i])/sigma;
             double xInf=(j-0.5-destinations[i])/sigma;
@@ -51,9 +53,7 @@ void StationModel::loiNormal()
 
         }
         for(int j=0;j<nbPortes;j++){
-
-            double value=nbPrevoyants*proportionDestination[i] * normalDiscretNormee[j];
-            s[j] += value;
+            s[j] +=nbVoyageur * normalDiscretNormee[j];
         }
     }
 
@@ -61,27 +61,51 @@ void StationModel::loiNormal()
 
 void StationModel::loiExponentiel()
 {
+
+
+    //                             centre
+    //          deux loi EXP:         _
+    //                               /|\
+    //                              / | \
+    //                            _/  |  \_
+    //                          _/|   |    \_
+    //                      __--  |   |     |--__
+    //                ___---      |   |     |    ---____
+    //         ___----  |         |   |     |         | ----______
+    //         |        |         |   |     |         |         | -------|
+    //      -------|---------|---------|---------|---------|---------|------>  x
+    // x :         0         1         2         3         4         5
+    //          _______   _______   _______   _______   _______   _______
+    //train :  /_______|-|_______|-|_______|-|_______|-|_______|-|_______\
     //boucle sur toutes les sorties (1 loi par sortie)
+    vector<double> ExpDiscret,ExpDiscretNormee;
+
     for (int i = 0; i < nbSorties; i++){
-        //On traite les trois cas ensemble : sorties[i]=0 , nbPortes-1 , ou d'autre
-        double e=exp(-lambda);
-        int m=sorties[i];
-        double A=(1 - e) / (1 + e - pow(e,m+1) - pow(e,nbPortes-m));
-        double nbVoyageur=tempsStation*debitEntree*propStresse*proportionSorties[i];
-
-        for (int j = 0; j < sorties[i]; j++){
-            s[j] += A*pow(e,(sorties[i] - j))*nbVoyageur;
-
+        ExpDiscret.assign(nbPortes,0);
+        ExpDiscretNormee.assign(nbPortes,0);
+        double centre=sorties[i];
+        int Icentre=floor(centre+0.5);
+        Icentre=min(nbPortes-1,Icentre);//if centre=29.5, Icentre will be 30, out of index
+        double nbVoyageur=nbRetardStresse*proportionSorties[i];
+        // if(k==centre):
+        ExpDiscret[Icentre]+=exp(-lambda*0)-exp(-lambda*(centre-(Icentre-0.5)))
+                + exp(-lambda*0) - exp(-lambda*(Icentre+0.5-centre));
+        for(int k=0;k<Icentre;k++){
+            ExpDiscret[k]+=exp(-lambda*(centre-(k+0.5)))-exp(-lambda*(centre-(k-0.5)));
         }
-        for (int j = sorties[i]; j < nbPortes; j++){
-            s[j] += A*pow(e,(j - sorties[i]))*nbVoyageur;
-
+        for(int k=Icentre+1;k<nbPortes;k++){
+            ExpDiscret[k]+=exp(-lambda*((k-0.5)-centre))-exp(-lambda*((k+0.5)-centre));
         }
-
-        //cette expression est la synthèse de trois étapes
-        //1/ à la porte la plus proche de la sortie, la fonction a pour valeur 1 et elle décroit de chaque côté selon une même loi exponentielle de paramètre -lambda
-        //2/ je norme cette fonction sur le quai
-        //3/ je multiplie par le nombre de passager stressé en retard entrant par la sortie i.
+        double S=0;
+        for(int j=0;j<nbPortes;j++){
+            S+=ExpDiscret[j];
+        }
+        for(int j=0;j<nbPortes;j++){
+            ExpDiscretNormee[j]=ExpDiscret[j]/S;
+        }
+        for(int j=0;j<nbPortes;j++){
+            s[j] += nbVoyageur * ExpDiscretNormee[j];
+        }
     }
 }
 
@@ -92,9 +116,46 @@ void StationModel::loiUniforme()
         //boucle sur les destinations
         for (int j = 0; j < nbDestinations; j++){
             //boucle sur les portes entre la sortie et les destinations
-            int nbInterval=abs(destinations[j]-sorties[i])+1;
-            for (int k = min(sorties[i],destinations[j]); k < max(sorties[i], destinations[j])+1; k++){
-                s[k] += tempsStation*debitEntree*(1 - propStresse)*proportionSorties[i] * proportionDestination[j]/nbInterval;
+            double distanceDestiSorti=abs(destinations[j]-sorties[i]);
+            double left=min(sorties[i],destinations[j]);
+            double right=max(sorties[i], destinations[j]);
+            int Ibegin=floor(left+0.5);
+            int Iend=floor(right+0.5);
+            Ibegin=min(nbPortes-1,Ibegin);
+            Iend=min(nbPortes-1,Iend);
+            double nbVoyageur=nbRetardNonStresse*proportionSorties[i] * proportionDestination[j];
+            //
+            //
+            //
+            //            sortie[i]                             desti[i]
+            //               |                                    |
+            //               |                                    |
+            //          _____V_   _______   _______   _______   __V____   _______
+            //train :  /_______|-|_______|-|_______|-|_______|-|_______|-|_______\
+            // k :         0         1         2         3         4         5
+            //             ^                                       ^
+            //          Ibegin                                   Iend
+            //
+            //longeur:       ---|---------|---------|---------|----
+            //
+            //         ^
+            //         |     --------------------------------------  ->constant = 1/distaceDestiSorti
+            //s[k]:    |     |  |         |         |         |   |
+            //         |-----------------------------------------------------------> X
+            if(Ibegin==Iend){
+                s[Ibegin]+=nbVoyageur;
+                continue;
+            }
+            for (int k = Ibegin; k <= Iend; k++){
+                double longeur;
+                if(left>=k-0.5&&left<k+0.5){
+                    longeur=k+0.5-left;
+                }else if(right>=k-0.5&&right<k-0.5){
+                    longeur=right-(k-0.5);
+                }else{
+                    longeur=1;
+                }
+                s[k] += longeur/distanceDestiSorti*nbVoyageur;
             }
         }
     }
@@ -102,65 +163,48 @@ void StationModel::loiUniforme()
 
 void StationModel::gotominilocal()
 {
+    double unPasPourJ=0.1;
     for (int i = 0; i < nbSorties; i++){
-        for (int j = 0; j < proportionSorties[i] * nbConfort; j++){
+        for (double j = 0; j < proportionSorties[i] * nbConfort; j+=unPasPourJ){
             int k,k_left,k_right;
-            if (sorties[i] == 0){
-                //  O->----------------------
-                for (k = 0; k < nbPortes-1; k++){
-                    if (s[k + 1] >= s[k]){
-                        s[k] += 1;
-                        break;
-                    }
-                }
-                //derniere porte
-                if(k==nbPortes-1)s[nbPortes-1]+=1;
-            }else if (sorties[i] == nbPortes-1){
-                //  ----------------------<-O
-                for (k = nbPortes-1; k > 0; k--){
-                    if (s[k - 1] >= s[k]){
-                        s[k] += 1;
-                        break;
-                    }
-                }
-                //derniere porte
-                if(k==0)s[0]+=1;
-            }else if (sorties[i] < nbPortes && sorties[i]>0){
-                //  ---------<-O->-----------
 
-                //Il y a deux choix, soit vers gauche, soit droite
-                //On suppose que la proportion de choix gauche et de droite est
-                //proportionnelle que la longueur de quai à gauche et à droite
-                double partieVersGauche,partieVersDroite;
-                partieVersGauche=double(sorties[i]-0)/(nbPortes-1);
-                partieVersDroite=double(nbPortes-sorties[i])/(nbPortes-1);
-                //Gauche+Droite=1
 
-                //vers gauche
-                for (k_left=sorties[i]; k_left >0; k_left--){
-                    if(s[k_left-1]>=s[k_left]){
-                        s[k_left]+=partieVersGauche;
-                        break;
-                    }
+            //Il y a deux choix, soit vers gauche, soit droite
+            //On suppose que la proportion de choix gauche et de droite est
+            //proportionnelle que la longueur de quai à gauche et à droite
+            double partieVersGauche,partieVersDroite;
+            partieVersGauche=(sorties[i]-0.0)/(nbPortes-1);
+            partieVersGauche=max(min(30.0,partieVersGauche),0.0);
+            partieVersDroite=(nbPortes-1-sorties[i])/(nbPortes-1);
+            partieVersGauche=max(min(30.0,partieVersGauche),0.0);
+            //Gauche+Droite=1
+            int Icentre=floor(sorties[i]+0.5);
+            Icentre=min(nbPortes-1,Icentre);
+            //vers gauche
+            for (k_left=Icentre; k_left >0; k_left--){
+                if(s[k_left-1]>=s[k_left]){
+                    s[k_left]+=partieVersGauche*unPasPourJ;
+                    break;
                 }
-                //derniere porte
-                if(k==0)s[0]+=partieVersGauche;
-
-                //vers droite
-                for (k_right=sorties[i]; k_right <nbPortes-1; k_right++){
-                    if(s[k_right-1]>=s[k_right]){
-                        s[k_right]+=partieVersDroite;
-                        break;
-                    }
-                }
-                //derniere porte
-                if(k==nbPortes-1)s[nbPortes-1]+=partieVersDroite;
             }
+            //derniere porte
+            if(k==0)s[0]+=partieVersGauche*unPasPourJ;
+
+            //vers droite
+            for (k_right=Icentre; k_right <nbPortes-1; k_right++){
+                if(s[k_right+1]>=s[k_right]){
+                    s[k_right]+=partieVersDroite*unPasPourJ;
+                    break;
+                }
+            }
+            //derniere porte
+            if(k==nbPortes-1)s[nbPortes-1]+=partieVersDroite*unPasPourJ;
+
         }
     }
 }
 
-void StationModel::initSortiesDesti(std::vector<int> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti)
+void StationModel::initSortiesDesti(std::vector<double> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti)
 {
     int nDesti=indicesDesti.size();
     int npDesti=proportionDesti.size();
@@ -210,23 +254,23 @@ StationModel::StationModel(int nbPortes, int nbDestinations)
     sorties.assign(nbSorties,0);
 
     //par default
-
-    sorties[0]=1;//deuxieme porte (probleme d'escalier)
-    sorties[1]=nbPortes-1;
+    sorties[0]=0;            // au debut de wagon 0
+    sorties[1]=(nbPortes-1)+0.5;// au bout de wagon 29
 
     //par default, proportion uniforme
     proportionDestination.assign(nbDestinations,1.0);
     proportionSorties.assign(nbSorties,1.0);
 
     //par default
-    sigma=2.0;
-    lambda=1;
-    nbPrevoyants=500;
-    nbConfort=200;
-    tempsStation=30;
-    propStresse=1;
-    debitEntree=10;
-    ecartType=1;
+    sigma=2.5;
+    lambda=0.4;
+    nbVoyageurTotal=1000;
+    //nbPrevoyants=500;
+    //nbConfort=200;
+    //nbPrevoyants=0;
+    //nbConfort=0;
+    //propStresse=0.8;
+    //ecartType=1;
 
 }
 
@@ -235,28 +279,38 @@ StationModel::~StationModel()
 
 }
 
-std::vector<double> StationModel::getRepartition(std::vector<int> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti)
+std::vector<double> StationModel::getRepartition(std::vector<double> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti,std::vector<double> propoVoyageur)
 {
     //init_quai
     s.assign(nbPortes,0.0);
+    nbPrevoyants=nbVoyageurTotal*propoVoyageur[0];
+    nbConfort=nbVoyageurTotal*propoVoyageur[1];
+    nbRetardStresse=nbVoyageurTotal*propoVoyageur[2];
+    nbRetardNonStresse=nbVoyageurTotal*propoVoyageur[3];
     initSortiesDesti(indicesDesti,proportionDesti,proportionSorti);
     normalizeProportion();
     loiNormal();
+    gotominilocal();
     loiExponentiel();
     loiUniforme();
-    gotominilocal();
+
     return s;
 }
 
-std::vector<double> StationModel::getRepartitionNonNormalizePropo(std::vector<int> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti)
+std::vector<double> StationModel::getRepartitionNonNormalizePropo(std::vector<double> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti,std::vector<double> propoVoyageur)
 {
     //init_quai
     s.assign(nbPortes,0.0);
+    nbPrevoyants=nbVoyageurTotal*propoVoyageur[0];
+    nbConfort=nbVoyageurTotal*propoVoyageur[1];
+    nbRetardStresse=nbVoyageurTotal*propoVoyageur[2];
+    nbRetardNonStresse=nbVoyageurTotal*propoVoyageur[3];
     initSortiesDesti(indicesDesti,proportionDesti,proportionSorti);
     loiNormal();
+    gotominilocal();
     loiExponentiel();
     loiUniforme();
-    gotominilocal();
+
     return s;
 }
 

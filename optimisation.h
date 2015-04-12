@@ -5,9 +5,10 @@
 
 #include "stationmodel.h"
 struct Variables{
-    std::vector<int>desti;
+    std::vector<double>desti;
     std::vector<double>propoDesti;
     std::vector<double>propoSorti;
+    std::vector<double>propoVoyageur;
     void print();
 };
 
@@ -18,18 +19,15 @@ private:
     StationModel* modelUtilise;
     double fonctionObjectif(Variables u);
     void projectionSousContrainte(Variables& u);
-    Variables takeBestMoveOfIndex(Variables u);
-    double minimiserSurPropo(Variables &u);
-    Variables calcGradientPourPropo(Variables u);
-    Variables unPasPourProportions(Variables &u, Variables gradientU);
-    Variables unPasPourIndiceDesti(Variables &u, Variables gradientU);
+    Variables calcGradient(Variables u);
+    Variables unPas(Variables &u,Variables gradientU);
     double TesterConvergence(Variables u_k,Variables u_k_1,Variables u0);
     void printCompare(Variables u);
 public:
     Optimisation();
     ~Optimisation();
-    setObservation(std::vector<double>observation);
-    setModel(StationModel& model);
+    void setObservation(std::vector<double>observation);
+    void setModel(StationModel& model);
     Variables minimiser(Variables uStart);
     void printOutCompare(Variables u);
 };

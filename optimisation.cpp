@@ -7,7 +7,7 @@ using namespace std;
 double Optimisation::fonctionObjectif(Variables u)
 {
     vector<double> R;
-    R=modelUtilise->getRepartitionNonNormalizePropo(u.desti,u.propoDesti,u.propoSorti);
+    R=modelUtilise->getRepartitionNonNormalizePropo(u.desti,u.propoDesti,u.propoSorti,u.propoVoyageur);
 
     //norme l^2
     double l2=0;
@@ -17,7 +17,8 @@ double Optimisation::fonctionObjectif(Variables u)
     for(int i=0;i<R.size();i++){
         l2+=(R[i]-observation[i])*(R[i]-observation[i]);
     }
-    return sqrt(l2);
+    //return sqrt(l2);
+    return l2;
 }
 
 void Optimisation::projectionSousContrainte(Variables &u)
@@ -25,7 +26,10 @@ void Optimisation::projectionSousContrainte(Variables &u)
     //Contrainte:
     //1.
     //les indices de destination,  >=0 et <=nbPorte
-    //déjà réaliser dans calcGradient();
+    int nbPortes=modelUtilise->getNbPortes();
+    for(int i=0;i<u.desti.size();i++){
+        u.desti[i]=max(min(u.desti[i],nbPortes-1+0.5),-0.5);
+    }
 
     //2.
     //propoDesti[1]+propoDesti[2]+... = 1
@@ -65,111 +69,46 @@ void Optimisation::projectionSousContrainte(Variables &u)
         u.propoSorti[i]/=S;
     }
 
+    //4.
+    //propoVoyageur[1]+propoVoyageur[2]+... = 1
+    //propoVoyageur[i]>0
+
+    //propoVoyageur[i]>0
+    S=0;
+    for(int i=0;i<u.propoVoyageur.size();i++){
+
+        u.propoVoyageur[i]=max(0.0,u.propoVoyageur[i]);
+    }
+    S=0;
+    //propoSorti[1]+propoSorti[2]+... = 1
+    for(int i=0;i<u.propoVoyageur.size();i++){
+        S+=u.propoVoyageur[i];
+    }
+    for(int i=0;i<u.propoVoyageur.size();i++){
+        u.propoVoyageur[i]/=S;
+    }
 }
 
-Variables Optimisation::takeBestMoveOfIndex(Variables u)
-{
-    Variables directionU=u,uNext,uPrev;
-
-    // minimiserSurPropo(u):
-    // On fix la partie indicePortes de u
-    // on fait minimisation sur proportionDesti et proportion Sorti
-    double J_min_u=minimiserSurPropo(u);
-
-    //boucle sur les Destinations
-    for(int i=0;i<u.desti.size();i++){
-        uNext=u;
-        uPrev=u;
-        if(u.desti[i]==0){
-            uNext.desti[i]+=1;
-            if(minimiserSurPropo(uNext)<J_min_u){
-                directionU.desti[i]=1;
-            }else{
-                directionU.desti[i]=0;
-            }
-        }else if(u.desti[i]==modelUtilise->getNbPortes()-1){
-            uPrev.desti[i]-=1;
-            if(minimiserSurPropo(uPrev)<J_min_u){
-                directionU.desti[i]=-1;
-            }else{
-                directionU.desti[i]=0;
-            }
-        }else{
-            uNext.desti[i]+=1;
-            uPrev.desti[i]-=1;
-            double left,right;
-            left=minimiserSurPropo(uPrev);
-            right=minimiserSurPropo(uNext);
-            if(left<J_min_u){
-                if(right<left){
-                    directionU.desti[i]=1;
-                }
-                else{
-                    directionU.desti[i]=-1;
-                }
-            }
-            else if(right<J_min_u){
-                directionU.desti[i]=1;
-            }else{
-                directionU.desti[i]=0;
-            }
-        }
-    }
-
-    //appliquer directionU sur u
-    Variables u_du=u;
-    for(int i=0;i<directionU.desti.size();i++){
-        u_du.desti[i]+=directionU.desti[i];
-    }
-    minimiserSurPropo(u_du);//ici u_du change
-    return u_du;
-
-}
-
-double Optimisation::minimiserSurPropo(Variables& u)
-{
-    Variables gradUPropo,u0,u_k,u_k_1,u_solu;
-    bool trouvee=false;
-    const int maxIter=1000;
-    u0=u_k=u;
-    //cout<<"sous pb starts:   Min sur Propo:"<<endl;
-    //cout<<"J(u0) = "<<fonctionObjectif(u0)<<endl;
-    double seuil=0.001;
-    for(int i=0;i<maxIter;i++){
-        //u_k.print();
-        //cout<<"J(uk)="<<fonctionObjectif(u_k)<<endl;
-        gradUPropo=calcGradientPourPropo(u_k);
-        u_k_1=unPasPourProportions(u_k,gradUPropo);
-        projectionSousContrainte(u_k_1);
-        if(  TesterConvergence(u_k,u_k_1,u0) < seuil      ){
-            u_solu=u_k_1;
-            trouvee=true;
-            break;
-        }
-        u_k=u_k_1;
-    }
-    if(trouvee){
-        //cout<<"sous pb solution trouvée : "<<endl;
-        //u_solu.print();cout<<endl;
-        //cout<<"SOUS PROB ENDS"<<endl;
-        u=u_solu;//assigner la valeur
-        return fonctionObjectif(u_solu);//J(u_solu)
-    }else{
-        cout<<"sous pb échec: max itération atteint :"<<maxIter<<endl;
-        cout<<"programme termine"<<endl;
-        exit(0);
-    }
 
 
-}
 
-Variables Optimisation::calcGradientPourPropo(Variables u)
+
+Variables Optimisation::calcGradient(Variables u)
 {
     Variables gradU,uNext,uPrev;
-    gradU=u;//pour avoir la meme taille avec u
-
+    gradU=u;
+    //gradient d'indice de destination
+    double dx=0.01;
+    for(int i=0; i<u.propoDesti.size();i++){
+        uNext=u;
+        uPrev=u;
+        uNext.desti[i]+=dx;
+        uPrev.desti[i]-=dx;
+        // df/dx = ( f(x+dx)-f(x-dx) ) / 2dx
+        gradU.desti[i]=( fonctionObjectif(uNext)-fonctionObjectif(uPrev) )/2/dx;
+    }
     //gradient de proportion de destination
-    double dx=0.00001;
+    dx=0.00001;
     for(int i=0; i<u.propoDesti.size();i++){
         uNext=u;
         uPrev=u;
@@ -188,34 +127,46 @@ Variables Optimisation::calcGradientPourPropo(Variables u)
         // df/dx = ( f(x+dx)-f(x-dx) ) / 2dx
         gradU.propoSorti[i]=( fonctionObjectif(uNext)-fonctionObjectif(uPrev) )/2/dx;
     }
+    //gradient de proportion de voyageur
+    for(int i=0; i<u.propoVoyageur.size();i++){
+        uNext=u;
+        uPrev=u;
+        uNext.propoVoyageur[i]+=dx;
+        uPrev.propoVoyageur[i]-=dx;
+        // df/dx = ( f(x+dx)-f(x-dx) ) / 2dx
+        gradU.propoVoyageur[i]=( fonctionObjectif(uNext)-fonctionObjectif(uPrev) )/2/dx;
+    }
     return gradU;
-
-
 }
 
-Variables Optimisation::unPasPourProportions(Variables &u,Variables gradientU)
+
+
+
+Variables Optimisation::unPas(Variables &u, Variables gradientU)
 {
     Variables u_du=u;
 
-    double lambda=0.00000005;
+    double lambda=0.0000001;
     double du;
+    for(int i=0;i<gradientU.desti.size();i++){
+        du=gradientU.desti[i]*lambda*10;
+        u_du.desti[i]-=min(max(du,-0.01),0.01);
+        if(abs(du)>0.01){cout<<"lambda for desti too large"<<endl;}
+    }
     for(int i=0;i<gradientU.propoDesti.size();i++){
-        du=gradientU.propoDesti[i]*lambda;
+        du=gradientU.propoDesti[i]*lambda*0.5;
         u_du.propoDesti[i]-=min(max(du,-0.01),0.01);
+        if(abs(du)>0.01){cout<<"lambda for propoDesti too large"<<endl;}
     }
     for(int i=0;i<gradientU.propoSorti.size();i++){
         du=gradientU.propoSorti[i]*lambda;
         u_du.propoSorti[i]-=min(max(du,-0.01),0.01);
+        if(abs(du)>0.01){cout<<"lambda for propoSorti too large"<<endl;}
     }
-    return u_du;
-
-}
-
-Variables Optimisation::unPasPourIndiceDesti(Variables &u, Variables gradientU)
-{
-    Variables u_du=u;
-    for(int i=0;i<gradientU.desti.size();i++){
-        u_du.desti[i]+=gradientU.desti[i];
+    for(int i=0;i<gradientU.propoVoyageur.size();i++){
+        du=gradientU.propoVoyageur[i]*lambda*0.5;
+        u_du.propoVoyageur[i]-=min(max(du,-0.01),0.01);
+        if(abs(du)>0.01){cout<<"lambda for propoVoyageur too large"<<endl;}
     }
     return u_du;
 }
@@ -227,7 +178,7 @@ double Optimisation::TesterConvergence(Variables u_k, Variables u_k_1, Variables
 
 void Optimisation::printCompare(Variables u)
 {
-    vector<double> R=modelUtilise->getRepartition(u.desti,u.propoDesti,u.propoSorti);
+    vector<double> R=modelUtilise->getRepartitionNonNormalizePropo(u.desti,u.propoDesti,u.propoSorti,u.propoVoyageur);
     double S1=0,S2=0;
     cout<<"Comparer les résultats:"<<endl;
     cout<<"\t\tObservation\tSimulation\tDifférence"<<endl;
@@ -251,7 +202,7 @@ Optimisation::~Optimisation()
 
 }
 
-Optimisation::setObservation(std::vector<double> observation)
+void Optimisation::setObservation(std::vector<double> observation)
 {
     if(modelUtilise==0){
         cout<<"Need to set Model in use firstly"<<endl;
@@ -264,39 +215,39 @@ Optimisation::setObservation(std::vector<double> observation)
     this->observation=observation;
 }
 
-Optimisation::setModel(StationModel &model)
+void Optimisation::setModel(StationModel &model)
 {
     modelUtilise=&model;
 }
 
 Variables Optimisation::minimiser(Variables uStart)
 {
-    Variables u0,u_k,u_k_1,u_solu;
+    Variables u0,u_k,u_k_1,u_solu,gradU;
     bool trouvee=false;
     u0=u_k=uStart;
 
     //seuil pour la condition d'arrêt
-    double seuil=0.001;
+    double seuil=0.0000001;
     cout<<"u0 = "<<endl;
     u0.print();
     cout<<"J(u0) = "<<fonctionObjectif(u0)<<endl<<endl<<"Commencer l'optimisation"<<endl;
     printOutCompare(u0);
     //DEBUG
+    //printCompare(u0);
     //Imagine::endGraphics();
     //exit(0);
-    for(int i=0;i<2000;i++){
-
+    for(int i=0;i<20000;i++){
         //----output------
         u_k.print();
         cout<<"J(uk)="<<fonctionObjectif(u_k)<<endl;
         printOutCompare(u_k);
 
-        //faire un pas sur les indiceDesti
-        // y compris le gradient, le pas, le projection
-        u_k_1=takeBestMoveOfIndex(u_k);
+        gradU=calcGradient(u_k);
+        u_k_1=unPas(u_k,gradU);
+        projectionSousContrainte(u_k_1);
 
         //condition d'arrêt
-        if(TesterConvergence(u_k,u_k_1,u_k)<seuil){
+        if(TesterConvergence(u_k,u_k_1,u0)<seuil){
             u_solu=u_k_1;
             trouvee=true;
             break;
@@ -312,19 +263,24 @@ Variables Optimisation::minimiser(Variables uStart)
         printCompare(u_solu);
 
     }else{
-        cout<<"Je trouve pas la solution, désolé. Changer uStart?"<<endl;
-        exit(0);
+        cout<<"Je trouve pas la solution, désolé. la solution la plus proche:"<<endl;
+        cout<<"u = "<<endl;
+        u_k_1.print();
+        cout<<endl;
+        printCompare(u_k_1);
+
     }
     return u_solu;
 }
 
 void Optimisation::printOutCompare(Variables u)
 {
-    vector<double> R=modelUtilise->getRepartitionNonNormalizePropo(u.desti,u.propoDesti,u.propoSorti);
+    vector<double> R=modelUtilise->getRepartitionNonNormalizePropo(u.desti,u.propoDesti,u.propoSorti,u.propoVoyageur);
     Imagine::setBackGround(Imagine::WHITE);
     for(int i=0; i<R.size();i++){
-        Imagine::drawLine(20 * i+10, 599, 20 * i+10, 599.-R[i], Imagine::MAGENTA);
-        Imagine::drawLine(20 * i+12, 599, 20 * i+12, 599.-observation[i], Imagine::BLACK);
+        Imagine::fillRect(20 * i+10, 599.-R[i],5,R[i], Imagine::MAGENTA);
+        Imagine::fillRect(20 * i+15, 599.-observation[i],5,observation[i], Imagine::BLACK);
+
     }
 
 }
@@ -335,15 +291,19 @@ void Variables::print()
 {
     //cout<<"Des ";
     for(int i=0;i<desti.size();i++){
-        cout<<desti[i]<<" ";
+        cout<<desti[i]<<",";
     }
     //cout<<"proD ";
     for(int i=0;i<propoDesti.size();i++){
-        cout<<setiosflags(ios::showpoint)<<setprecision(4)<<propoDesti[i]<<"  ";
+        cout<<setiosflags(ios::showpoint)<<setprecision(4)<<propoDesti[i]<<",";
     }
     //cout<<"proS ";
     for(int i=0;i<propoSorti.size();i++){
-        cout<<setiosflags(ios::showpoint)<<setprecision(4)<<propoSorti[i]<<"  ";
+        cout<<setiosflags(ios::showpoint)<<setprecision(4)<<propoSorti[i]<<",";
+    }
+    //cout<<"proV ";
+    for(int i=0;i<propoVoyageur.size();i++){
+        cout<<setiosflags(ios::showpoint)<<setprecision(4)<<propoVoyageur[i]<<",";
     }
 
 }
