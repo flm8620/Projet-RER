@@ -1,8 +1,38 @@
 #include "stationmodel.h"
 #include <iostream>
 #include "normaldistribution.h"
+#include <iomanip>
 using namespace std;
 
+Variables::Variables()
+{
+    sigma=2.5;
+    lambda=0.4;
+}
+
+void Variables::print()
+{
+    //cout<<"Des ";
+    for(int i=0;i<desti.size();i++){
+        cout<<desti[i]<<",";
+    }
+    //cout<<"proD ";
+    for(int i=0;i<propoDesti.size();i++){
+        cout<<setiosflags(ios::showpoint)<<setprecision(4)<<propoDesti[i]<<",";
+    }
+    //cout<<"proS ";
+    for(int i=0;i<propoSorti.size();i++){
+        cout<<setiosflags(ios::showpoint)<<setprecision(4)<<propoSorti[i]<<",";
+    }
+    //cout<<"proV ";
+    for(int i=0;i<propoVoyageur.size();i++){
+        cout<<setiosflags(ios::showpoint)<<setprecision(4)<<propoVoyageur[i]<<",";
+    }
+    //cout<<"sigma";
+    cout<<setiosflags(ios::showpoint)<<setprecision(4)<<sigma<<",";
+    //cout<<"lambda";
+    cout<<setiosflags(ios::showpoint)<<setprecision(4)<<lambda<<",";
+}
 void StationModel::normalizeProportion()
 {
     // assurer que la sommation de proportion = 1
@@ -254,16 +284,16 @@ StationModel::StationModel(int nbPortes, int nbDestinations)
     sorties.assign(nbSorties,0);
 
     //par default
-    sorties[0]=0;            // au debut de wagon 0
-    sorties[1]=(nbPortes-1)+0.5;// au bout de wagon 29
+    sorties[0]=7.25;            // au debut de wagon 0
+    sorties[1]=21.75;//(nbPortes-1)+0.5;// au bout de wagon 29
 
     //par default, proportion uniforme
     proportionDestination.assign(nbDestinations,1.0);
     proportionSorties.assign(nbSorties,1.0);
 
     //par default
-    sigma=2.5;
-    lambda=0.4;
+    //sigma=2.5;
+    //lambda=0.4;
     nbVoyageurTotal=1000;
     //nbPrevoyants=500;
     //nbConfort=200;
@@ -279,15 +309,15 @@ StationModel::~StationModel()
 
 }
 
-std::vector<double> StationModel::getRepartition(std::vector<double> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti,std::vector<double> propoVoyageur)
+std::vector<double> StationModel::getRepartition(Variables u)
 {
     //init_quai
     s.assign(nbPortes,0.0);
-    nbPrevoyants=nbVoyageurTotal*propoVoyageur[0];
-    nbConfort=nbVoyageurTotal*propoVoyageur[1];
-    nbRetardStresse=nbVoyageurTotal*propoVoyageur[2];
-    nbRetardNonStresse=nbVoyageurTotal*propoVoyageur[3];
-    initSortiesDesti(indicesDesti,proportionDesti,proportionSorti);
+    nbPrevoyants=nbVoyageurTotal*u.propoVoyageur[0];
+    nbConfort=nbVoyageurTotal*u.propoVoyageur[1];
+    nbRetardStresse=nbVoyageurTotal*u.propoVoyageur[2];
+    nbRetardNonStresse=nbVoyageurTotal*u.propoVoyageur[3];
+    initSortiesDesti(u.desti,u.propoDesti,u.propoSorti);
     normalizeProportion();
     loiNormal();
     gotominilocal();
@@ -297,15 +327,17 @@ std::vector<double> StationModel::getRepartition(std::vector<double> indicesDest
     return s;
 }
 
-std::vector<double> StationModel::getRepartitionNonNormalizePropo(std::vector<double> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti,std::vector<double> propoVoyageur)
+std::vector<double> StationModel::getRepartitionNonNormalizePropo(Variables u)
 {
     //init_quai
     s.assign(nbPortes,0.0);
-    nbPrevoyants=nbVoyageurTotal*propoVoyageur[0];
-    nbConfort=nbVoyageurTotal*propoVoyageur[1];
-    nbRetardStresse=nbVoyageurTotal*propoVoyageur[2];
-    nbRetardNonStresse=nbVoyageurTotal*propoVoyageur[3];
-    initSortiesDesti(indicesDesti,proportionDesti,proportionSorti);
+    sigma=u.sigma;
+    lambda=u.lambda;
+    nbPrevoyants=nbVoyageurTotal*u.propoVoyageur[0];
+    nbConfort=nbVoyageurTotal*u.propoVoyageur[1];
+    nbRetardStresse=nbVoyageurTotal*u.propoVoyageur[2];
+    nbRetardNonStresse=nbVoyageurTotal*u.propoVoyageur[3];
+    initSortiesDesti(u.desti,u.propoDesti,u.propoSorti);
     loiNormal();
     gotominilocal();
     loiExponentiel();

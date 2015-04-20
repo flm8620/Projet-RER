@@ -2,12 +2,11 @@
 #include <Imagine/Images.h>
 #include <Imagine/Graphics.h>
 #include <cmath>
-#include <iomanip>
 using namespace std;
 double Optimisation::fonctionObjectif(Variables u)
 {
     vector<double> R;
-    R=modelUtilise->getRepartitionNonNormalizePropo(u.desti,u.propoDesti,u.propoSorti,u.propoVoyageur);
+    R=modelUtilise->getRepartitionNonNormalizePropo(u);
 
     //norme l^2
     double l2=0;
@@ -108,7 +107,7 @@ Variables Optimisation::calcGradient(Variables u)
         gradU.desti[i]=( fonctionObjectif(uNext)-fonctionObjectif(uPrev) )/2/dx;
     }
     //gradient de proportion de destination
-    dx=0.00001;
+    dx=0.00005;
     for(int i=0; i<u.propoDesti.size();i++){
         uNext=u;
         uPrev=u;
@@ -136,6 +135,22 @@ Variables Optimisation::calcGradient(Variables u)
         // df/dx = ( f(x+dx)-f(x-dx) ) / 2dx
         gradU.propoVoyageur[i]=( fonctionObjectif(uNext)-fonctionObjectif(uPrev) )/2/dx;
     }
+    //gradient de sigma et lambda
+
+    uNext=u;
+    uPrev=u;
+    uNext.sigma+=dx;
+    uPrev.sigma-=dx;
+    // df/dx = ( f(x+dx)-f(x-dx) ) / 2dx
+    gradU.sigma=( fonctionObjectif(uNext)-fonctionObjectif(uPrev) )/2/dx;
+
+    uNext=u;
+    uPrev=u;
+    uNext.lambda+=dx;
+    uPrev.lambda-=dx;
+    // df/dx = ( f(x+dx)-f(x-dx) ) / 2dx
+    gradU.lambda=( fonctionObjectif(uNext)-fonctionObjectif(uPrev) )/2/dx;
+
     return gradU;
 }
 
@@ -146,7 +161,7 @@ Variables Optimisation::unPas(Variables &u, Variables gradientU)
 {
     Variables u_du=u;
 
-    double lambda=0.0000001;
+    double lambda=0.000001;
     double du;
     for(int i=0;i<gradientU.desti.size();i++){
         du=gradientU.desti[i]*lambda*10;
@@ -168,6 +183,13 @@ Variables Optimisation::unPas(Variables &u, Variables gradientU)
         u_du.propoVoyageur[i]-=min(max(du,-0.01),0.01);
         if(abs(du)>0.01){cout<<"lambda for propoVoyageur too large"<<endl;}
     }
+
+    du=gradientU.sigma*lambda*10;
+    u_du.sigma-=min(max(du,-0.01),0.01);
+    if(abs(du)>0.01){cout<<"lambda for sigma too large"<<endl;}
+    du=gradientU.lambda*lambda*10;
+    u_du.lambda-=min(max(du,-0.01),0.01);
+    if(abs(du)>0.01){cout<<"lambda for lambda too large"<<endl;}
     return u_du;
 }
 
@@ -178,7 +200,7 @@ double Optimisation::TesterConvergence(Variables u_k, Variables u_k_1, Variables
 
 void Optimisation::printCompare(Variables u)
 {
-    vector<double> R=modelUtilise->getRepartitionNonNormalizePropo(u.desti,u.propoDesti,u.propoSorti,u.propoVoyageur);
+    vector<double> R=modelUtilise->getRepartitionNonNormalizePropo(u);
     double S1=0,S2=0;
     cout<<"Comparer les résultats:"<<endl;
     cout<<"\t\tObservation\tSimulation\tDifférence"<<endl;
@@ -247,7 +269,8 @@ Variables Optimisation::minimiser(Variables uStart)
         projectionSousContrainte(u_k_1);
 
         //condition d'arrêt
-        if(TesterConvergence(u_k,u_k_1,u0)<seuil){
+        //if(TesterConvergence(u_k,u_k_1,u0)<seuil){
+        if(false){
             u_solu=u_k_1;
             trouvee=true;
             break;
@@ -275,7 +298,7 @@ Variables Optimisation::minimiser(Variables uStart)
 
 void Optimisation::printOutCompare(Variables u)
 {
-    vector<double> R=modelUtilise->getRepartitionNonNormalizePropo(u.desti,u.propoDesti,u.propoSorti,u.propoVoyageur);
+    vector<double> R=modelUtilise->getRepartitionNonNormalizePropo(u);
     Imagine::setBackGround(Imagine::WHITE);
     for(int i=0; i<R.size();i++){
         Imagine::fillRect(20 * i+10, 599.-R[i],5,R[i], Imagine::MAGENTA);
@@ -287,23 +310,3 @@ void Optimisation::printOutCompare(Variables u)
 
 
 
-void Variables::print()
-{
-    //cout<<"Des ";
-    for(int i=0;i<desti.size();i++){
-        cout<<desti[i]<<",";
-    }
-    //cout<<"proD ";
-    for(int i=0;i<propoDesti.size();i++){
-        cout<<setiosflags(ios::showpoint)<<setprecision(4)<<propoDesti[i]<<",";
-    }
-    //cout<<"proS ";
-    for(int i=0;i<propoSorti.size();i++){
-        cout<<setiosflags(ios::showpoint)<<setprecision(4)<<propoSorti[i]<<",";
-    }
-    //cout<<"proV ";
-    for(int i=0;i<propoVoyageur.size();i++){
-        cout<<setiosflags(ios::showpoint)<<setprecision(4)<<propoVoyageur[i]<<",";
-    }
-
-}

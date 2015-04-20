@@ -2,7 +2,16 @@
 #define STATIONMODEL_H
 #include <vector>
 #include <cmath>
-
+#include <iostream>
+struct Variables{
+    std::vector<double>desti;
+    std::vector<double>propoDesti;
+    std::vector<double>propoSorti;
+    std::vector<double>propoVoyageur;
+    double sigma,lambda;
+    Variables();
+    void print();
+};
 class StationModel
 {
 private:
@@ -35,8 +44,8 @@ private:
 public:
     StationModel(int nbPortes, int nbDestinations);
     ~StationModel();
-    std::vector<double> getRepartition(std::vector<double> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti,std::vector<double> propoVoyageur);
-    std::vector<double> getRepartitionNonNormalizePropo(std::vector<double> indicesDesti, std::vector<double> proportionDesti, std::vector<double> proportionSorti, std::vector<double> propoVoyageur);
+    std::vector<double> getRepartition(Variables u);
+    std::vector<double> getRepartitionNonNormalizePropo(Variables u);
     int getNbPortes(){return nbPortes;}
 };
 

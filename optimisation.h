@@ -4,13 +4,7 @@
 #include <iostream>
 
 #include "stationmodel.h"
-struct Variables{
-    std::vector<double>desti;
-    std::vector<double>propoDesti;
-    std::vector<double>propoSorti;
-    std::vector<double>propoVoyageur;
-    void print();
-};
+
 
 class Optimisation
 {
